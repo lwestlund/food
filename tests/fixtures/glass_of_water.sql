@@ -11,14 +11,14 @@ VALUES
 INSERT INTO ingredient
 (name)
 VALUES
-('water'),
-('any drinking glass');
+('any drinking glass'),
+('water');
 
 INSERT INTO measurement
 (unit)
 VALUES
-('dl'),
-('piece');
+('piece'),
+('dl');
 
 INSERT INTO recipe
 (title, description, meal_type_id, source_id, creation_date)
@@ -28,11 +28,11 @@ VALUES
 INSERT INTO recipe_ingredient
 (quantity, recipe_id, ingredient_id, measurement_id)
 VALUES
-(25, 1, 1, 1),
-(1, 1, 2, 2);
+(1, 1, 1, 1),
+(2.5, 1, 2, 2);
 
 INSERT INTO instruction
 (step_number, description, recipe_id)
 VALUES
-(1, 'Pour the water into the glass', 1),
-(2, 'Enjoy the nice water', 1);
+(1, 'Pour the water into the glass.', 1),
+(2, 'Enjoy the nice water.', 1);

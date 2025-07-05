@@ -13,3 +13,6 @@ db-reset:
 
 db-interactive:
     sqlite3 {{database-url}}
+
+backend:
+    cargo run
