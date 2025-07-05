@@ -1,0 +1,3 @@
+# Let's not check in the database itself and instead make sure that we have
+# migrations for everything we need!
+food.db
