@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["food-backend"]
+members = ["food-backend", "food-frontend"]
 
 [workspace.package]
 edition = "2024"

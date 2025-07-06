@@ -16,3 +16,6 @@ db-interactive:
 
 backend:
     cargo run --bin food-backend
+
+frontend:
+    cargo run --bin food-frontend

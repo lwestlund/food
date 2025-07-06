@@ -389,6 +389,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "food-frontend"
+version = "0.1.0"
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
