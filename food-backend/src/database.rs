@@ -21,7 +21,8 @@ pub async fn from_env() -> anyhow::Result<SqlitePool> {
     let pool_options = SqlitePoolOptions::new();
     let pool = pool_options
         .connect_with(configure_connect_options(options))
-        .await?;
+        .await
+        .context("Failed to connect to the database")?;
     Ok(pool)
 }
 

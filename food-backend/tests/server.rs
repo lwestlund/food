@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use food::{database, models, server};
+use food_backend::{database, models, server};
 use http_body_util::BodyExt as _;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower::ServiceExt as _;
@@ -10,7 +10,7 @@ use tower::ServiceExt as _;
 #[sqlx::test(fixtures("glass_of_water"))]
 async fn test_get_recipes(pool_options: SqlitePoolOptions, options: SqliteConnectOptions) {
     let pool = pool_options
-        .connect_with(food::database::configure_connect_options(options))
+        .connect_with(database::configure_connect_options(options))
         .await
         .unwrap();
     let app = server::app(pool);
@@ -29,9 +29,8 @@ async fn test_get_recipes(pool_options: SqlitePoolOptions, options: SqliteConnec
     assert_eq!(recipe_listing.title, "Glass of water");
 }
 
-#[tokio::test]
-async fn test_404() {
-    let pool = database::from_env().await.unwrap();
+#[sqlx::test]
+async fn test_404(pool: sqlx::SqlitePool) {
     let app = server::app(pool);
 
     let request = Request::get("/does-not-exist").body(Body::empty()).unwrap();

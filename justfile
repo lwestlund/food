@@ -15,4 +15,4 @@ db-interactive:
     sqlite3 {{database-url}}
 
 backend:
-    cargo run
+    cargo run --bin food-backend

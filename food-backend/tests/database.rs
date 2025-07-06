@@ -1,11 +1,11 @@
-use food::database;
+use food_backend::database;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 #[sqlx::test(fixtures("glass_of_water"))]
 #[allow(clippy::float_cmp)]
 async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectOptions) {
     let pool = pool_options
-        .connect_with(food::database::configure_connect_options(options))
+        .connect_with(database::configure_connect_options(options))
         .await
         .unwrap();
 
