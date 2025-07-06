@@ -6,6 +6,7 @@ pub struct RecipeListing {
     pub title: String,
 }
 
+#[derive(Debug)]
 pub struct Recipe {
     pub title: String,
     pub description: String,

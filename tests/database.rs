@@ -40,4 +40,8 @@ async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectO
         r.creation_date,
         chrono::NaiveDate::from_ymd_opt(2025, 1, 19).unwrap()
     );
+
+    let non_existing_id = 5;
+    let r = database::recipe(&pool, non_existing_id).await;
+    assert!(matches!(r, Err(sqlx::Error::RowNotFound)));
 }
