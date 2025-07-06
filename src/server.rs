@@ -15,6 +15,7 @@ pub async fn serve(pool: SqlitePool) -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(format!("[::]:{port}")).await?;
 
     let app = app(pool);
+    let app = app.fallback(handler_404);
 
     axum::serve(listener, app).await?;
     Ok(())
@@ -27,6 +28,10 @@ async fn get_recipes(
         .await
         .map_err(internal_error)?;
     Ok(Json(recipes))
+}
+
+async fn handler_404() -> StatusCode {
+    StatusCode::NOT_FOUND
 }
 
 fn internal_error<E>(err: E) -> (StatusCode, String)
