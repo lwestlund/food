@@ -1,3 +1,7 @@
+mod error;
+
+use error::Result;
+
 use axum::{Extension, Json, Router, http::StatusCode, routing::get};
 use sqlx::SqlitePool;
 
@@ -21,22 +25,11 @@ pub async fn serve(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn get_recipes(
-    pool: Extension<SqlitePool>,
-) -> Result<Json<Vec<models::RecipeListing>>, (StatusCode, String)> {
-    let recipes = database::all_recipe_titles(&pool)
-        .await
-        .map_err(internal_error)?;
+async fn get_recipes(pool: Extension<SqlitePool>) -> Result<Json<Vec<models::RecipeListing>>> {
+    let recipes = database::all_recipe_titles(&pool).await?;
     Ok(Json(recipes))
 }
 
 async fn handler_404() -> StatusCode {
     StatusCode::NOT_FOUND
-}
-
-fn internal_error<E>(err: E) -> (StatusCode, String)
-where
-    E: std::error::Error,
-{
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
