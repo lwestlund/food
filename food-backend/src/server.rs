@@ -14,8 +14,7 @@ pub fn app(pool: SqlitePool) -> Router {
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub async fn serve(pool: SqlitePool) -> anyhow::Result<()> {
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+pub async fn serve(port: String, pool: SqlitePool) -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(format!("[::]:{port}")).await?;
 
     let app = app(pool);
