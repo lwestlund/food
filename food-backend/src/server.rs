@@ -9,7 +9,7 @@ use crate::{database, models};
 
 pub fn app(pool: SqlitePool) -> Router {
     Router::new()
-        .route("/recipes", get(get_recipes))
+        .route("/api/recipes", get(get_recipes_list))
         .with_state(pool)
 }
 
@@ -24,7 +24,9 @@ pub async fn serve(port: String, pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn get_recipes(State(pool): State<SqlitePool>) -> Result<Json<Vec<models::RecipeListing>>> {
+async fn get_recipes_list(
+    State(pool): State<SqlitePool>,
+) -> Result<Json<Vec<models::RecipeListing>>> {
     let recipes = database::all_recipe_titles(&pool).await?;
     Ok(Json(recipes))
 }

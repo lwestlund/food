@@ -15,7 +15,7 @@ async fn test_get_recipes(pool_options: SqlitePoolOptions, options: SqliteConnec
         .unwrap();
     let app = server::app(pool);
 
-    let request = Request::get("/recipes").body(Body::empty()).unwrap();
+    let request = Request::get("/api/recipes").body(Body::empty()).unwrap();
     let response = app.clone().oneshot(request).await.unwrap();
     assert!(response.status().is_success());
 
