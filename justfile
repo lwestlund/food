@@ -19,3 +19,6 @@ backend:
 
 frontend:
     cargo run --bin food-frontend
+
+frontend-watch:
+    cargo watch --watch food-frontend -- cargo run --bin food-frontend

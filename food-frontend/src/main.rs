@@ -5,12 +5,15 @@ use axum::{
     routing::get,
 };
 use maud::{DOCTYPE, Markup, html};
+use tower_livereload::LiveReloadLayer;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3002".to_string());
 
-    let app = Router::new().route("/", get(hello_world));
+    let app = Router::new()
+        .route("/", get(hello_world))
+        .layer(LiveReloadLayer::new());
     let address = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(address.clone()).await?;
 
