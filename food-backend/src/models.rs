@@ -6,7 +6,7 @@ pub struct RecipeListing {
     pub title: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Recipe {
     pub title: String,
     pub description: String,
@@ -18,7 +18,7 @@ pub struct Recipe {
     pub creation_date: chrono::NaiveDate,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Ingredient {
     pub quantity: f64,
     pub unit: String,

@@ -2,7 +2,12 @@ mod error;
 
 use error::Result;
 
-use axum::{Json, Router, extract::State, http::StatusCode, routing::get};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    routing::get,
+};
 use sqlx::SqlitePool;
 
 use crate::{database, models};
@@ -10,6 +15,7 @@ use crate::{database, models};
 pub fn app(pool: SqlitePool) -> Router {
     Router::new()
         .route("/api/recipes", get(get_recipes_list))
+        .route("/api/recipes/{recipe_id}", get(get_recipe_by_id))
         .with_state(pool)
 }
 
@@ -29,6 +35,14 @@ async fn get_recipes_list(
 ) -> Result<Json<Vec<models::RecipeListing>>> {
     let recipes = database::all_recipe_titles(&pool).await?;
     Ok(Json(recipes))
+}
+
+async fn get_recipe_by_id(
+    State(pool): State<SqlitePool>,
+    Path(recipe_id): Path<i64>,
+) -> Result<Json<models::Recipe>> {
+    let recipe = database::recipe(&pool, recipe_id).await?;
+    Ok(Json(recipe))
 }
 
 async fn handler_404() -> StatusCode {
