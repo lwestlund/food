@@ -6,8 +6,6 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
 };
 
-use crate::models;
-
 #[must_use]
 pub fn configure_connect_options(options: SqliteConnectOptions) -> SqliteConnectOptions {
     options.foreign_keys(true)

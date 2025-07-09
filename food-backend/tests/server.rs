@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use food_backend::{database, models, server};
+use food_backend::{database, server};
 use http_body_util::BodyExt as _;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower::ServiceExt as _;

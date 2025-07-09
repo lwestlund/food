@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+#[must_use]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecipeListing {
     pub id: i64,
     pub title: String,
 }
 
+#[must_use]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Recipe {
     pub title: String,
@@ -18,6 +20,7 @@ pub struct Recipe {
     pub creation_date: chrono::NaiveDate,
 }
 
+#[must_use]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Ingredient {
     pub quantity: f64,

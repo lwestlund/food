@@ -382,6 +382,7 @@ dependencies = [
  "axum",
  "chrono",
  "http-body-util",
+ "models",
  "serde",
  "serde_json",
  "sqlx",
@@ -940,6 +941,14 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "models"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "serde",
 ]
 
 [[package]]

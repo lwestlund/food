@@ -1,6 +1,10 @@
 [workspace]
 resolver = "3"
-members = ["food-backend", "food-frontend"]
+members = [
+    "food-backend",
+    "food-frontend",
+    "crates/*",
+]
 
 [workspace.package]
 edition = "2024"
@@ -8,11 +12,14 @@ edition = "2024"
 [workspace.dependencies]
 anyhow = "1.0.98"
 axum = "0.8.4"
+chrono = { version = "0.4.41", default-features = false, features = ["serde"] }
 http-body-util = "0.1.3"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 tokio = { version = "1.46.1", default-features = false, features = ["macros", "net", "rt-multi-thread"] }
 tower = { version = "0.5.2", default-features = false, features = ["util"] }
+
+models = { version = "0.0.0", path = "crates/models" }
 
 [workspace.lints.clippy]
 pedantic = "deny"

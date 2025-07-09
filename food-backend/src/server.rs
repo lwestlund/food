@@ -10,7 +10,7 @@ use axum::{
 };
 use sqlx::SqlitePool;
 
-use crate::{database, models};
+use crate::database;
 
 pub fn app(pool: SqlitePool) -> Router {
     Router::new()
