@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+#[must_use]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecipeListing {
     pub id: i64,
     pub title: String,
 }
 
-#[derive(Debug)]
+#[must_use]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Recipe {
     pub title: String,
     pub description: String,
@@ -18,7 +20,8 @@ pub struct Recipe {
     pub creation_date: chrono::NaiveDate,
 }
 
-#[derive(Debug)]
+#[must_use]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Ingredient {
     pub quantity: f64,
     pub unit: String,
