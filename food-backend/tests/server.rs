@@ -39,7 +39,7 @@ async fn test_get_recipe_by_id(pool_options: SqlitePoolOptions, options: SqliteC
     let app = server::app(pool);
 
     let request = Request::get("/api/recipes/1").body(Body::empty()).unwrap();
-    let response = app.oneshot(request).await.unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
     assert!(response.status().is_success());
 
     let body = response.into_body().collect().await.unwrap().to_bytes();
@@ -63,6 +63,10 @@ async fn test_get_recipe_by_id(pool_options: SqlitePoolOptions, options: SqliteC
         r.creation_date,
         chrono::NaiveDate::from_ymd_opt(2025, 1, 19).unwrap()
     );
+
+    let request = Request::get("/api/recipes/2").body(Body::empty()).unwrap();
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[sqlx::test]
