@@ -36,6 +36,7 @@ impl Backend {
         let t: T = serde_json::from_slice(&bytes)?;
         Ok(t)
     }
+
     async fn get_json_bytes(&self, endpoint: &str) -> Result<Bytes, BackendError> {
         let url = self.format_url(endpoint);
 
