@@ -17,6 +17,9 @@ db-interactive:
 backend:
     cargo run --bin food-backend
 
+backend-watch:
+    cargo watch --watch food-backend -- cargo run --bin food-backend
+
 frontend:
     cargo run --bin food-frontend
 
