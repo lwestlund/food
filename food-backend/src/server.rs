@@ -1,5 +1,7 @@
 mod error;
 
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
 use error::Result;
 
 use axum::{
@@ -20,8 +22,9 @@ pub fn app(pool: SqlitePool) -> Router {
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub async fn serve(port: String, pool: SqlitePool) -> anyhow::Result<()> {
-    let listener = tokio::net::TcpListener::bind(format!("[::]:{port}")).await?;
+pub async fn serve(port: u16, pool: SqlitePool) -> anyhow::Result<()> {
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port);
+    let listener = tokio::net::TcpListener::bind(addr).await?;
 
     let app = app(pool);
     let app = app.fallback(handler_404);
