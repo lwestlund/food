@@ -396,10 +396,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "heck",
  "maud",
  "models",
  "reqwest",
+ "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "tower-livereload",
 ]
