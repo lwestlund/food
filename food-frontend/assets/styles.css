@@ -1,0 +1,40 @@
+#wrapper {
+    display: grid;
+    justify-content: center;
+}
+
+#recipe {
+    border: solid 1px #e1e8f0;
+    border-radius: 8px;
+    width: 400px;
+    padding: 40px;
+}
+
+#recipe h2 {
+    color: #0f1729;
+    margin-bottom: 2px;
+}
+
+#recipe h4 {
+    color: #0f1729;
+    margin-bottom: 4px;
+}
+
+#wrapper #footer {
+    color: #65768c;
+    margin: 10px;
+    text-align: right;
+}
+
+#meal-type {
+    display: inline-block;
+    padding: 0px 6px;
+    font-size: 0.8em;
+    border: solid 1px #e1e8f0;
+    border-radius: 0.8em;
+}
+
+#meal-type p {
+    padding: 0px;
+    margin: 0px;
+}

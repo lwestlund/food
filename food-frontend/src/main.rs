@@ -5,6 +5,7 @@ mod mime;
 use backend::Backend;
 use error::{AppError, ErrorResponse, ErrorWithLayout as _, ResultWithLayout as _};
 use heck::ToKebabCase;
+use tower_http::services::ServeFile;
 
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -38,6 +39,12 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(root))
         .route("/recipes/{recipe}", get(recipe))
+        // TODO(lovew): Bundle the CSS with the application, this depends on
+        // that the file exists on disk even at runtime.
+        .route_service(
+            "/styles.css",
+            ServeFile::new(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/styles.css")),
+        )
         .fallback(handler_404)
         .with_state(backend)
         .layer(LiveReloadLayer::new());
@@ -128,6 +135,7 @@ impl Layout {
                 head {
                     meta charset="utf-8";
                     title { (self.title) }
+                    link rel="stylesheet" href="/styles.css";
                 }
                 body {
                     nav {
@@ -155,33 +163,44 @@ trait Render {
 impl Render for models::Recipe {
     fn render(self) -> Markup {
         html! {
-            h2 { (self.title) }
-            p { (self.description) }
-            p { (self.meal_type) }
+            div id="wrapper" {
+                div id="recipe" {
+                    h2 { (self.title) }
+                    div id="meal-type" {
+                        p  { (self.meal_type.to_uppercase()) }
+                    }
+                    p { (self.description) }
 
-            div {
-                ul {
-                    @for ingredient in self.ingredients {
-                        li { (ingredient.quantity) " " (ingredient.unit) " " (ingredient.name) }
+                    div {
+                        h4 { "Ingredients" }
+                        div {
+                            @for ingredient in self.ingredients {
+                                div {
+                                    "\u{2023} " (ingredient.quantity) " " (ingredient.unit) " " (ingredient.name)
+                                }
+                            }
+                        }
+                    }
+
+                    div {
+                        h4 { "Instructions" }
+                        div {
+                            @for (i, instruction) in self.instructions.iter().enumerate() {
+                                div { (i+1) ". " (instruction) }
+                            }
+                        }
                     }
                 }
-            }
 
-            div {
-                ol {
-                    @for instruction in self.instructions {
-                        li { (instruction) }
+                div id="footer" {
+                    @if let Some(source_url) = self.source_url {
+                        a href=(source_url) { (self.source_name) }
+                    } @else {
+                        (self.source_name)
                     }
+                    ", " (self.creation_date)
                 }
             }
-
-            @if let Some(source_url) = self.source_url {
-                p { (self.source_name) ", " (source_url) }
-            } @else {
-                p { (self.source_name) }
-            }
-
-            p { (self.creation_date) }
         }
     }
 }
