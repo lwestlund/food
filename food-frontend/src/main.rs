@@ -109,35 +109,7 @@ async fn recipe(
         return Err(AppError::NotFound.with_layout(&layout));
     }
 
-    let body = html! {
-        h2 { (recipe.title) }
-        p { (recipe.description) }
-        p { (recipe.meal_type) }
-
-        div {
-            ul {
-                @for ingredient in recipe.ingredients {
-                    li { (ingredient.quantity) " " (ingredient.unit) " " (ingredient.name) }
-                }
-            }
-        }
-
-        div {
-            ol {
-                @for instruction in recipe.instructions {
-                    li { (instruction) }
-                }
-            }
-        }
-
-        @if let Some(source_url) = recipe.source_url {
-            p { (recipe.source_name) ", " (source_url) }
-        } @else {
-            p { (recipe.source_name) }
-        }
-
-        p { (recipe.creation_date) }
-    };
+    let body = recipe.render();
 
     Ok(layout.render(&body))
 }
@@ -181,6 +153,44 @@ impl Layout {
         self.title.insert_str(0, SEPARATOR);
         self.title.insert_str(0, status);
         self
+    }
+}
+
+trait Render {
+    fn render(self) -> Markup;
+}
+
+impl Render for models::Recipe {
+    fn render(self) -> Markup {
+        html! {
+            h2 { (self.title) }
+            p { (self.description) }
+            p { (self.meal_type) }
+
+            div {
+                ul {
+                    @for ingredient in self.ingredients {
+                        li { (ingredient.quantity) " " (ingredient.unit) " " (ingredient.name) }
+                    }
+                }
+            }
+
+            div {
+                ol {
+                    @for instruction in self.instructions {
+                        li { (instruction) }
+                    }
+                }
+            }
+
+            @if let Some(source_url) = self.source_url {
+                p { (self.source_name) ", " (source_url) }
+            } @else {
+                p { (self.source_name) }
+            }
+
+            p { (self.creation_date) }
+        }
     }
 }
 
