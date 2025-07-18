@@ -2,6 +2,7 @@ use axum::{http::StatusCode, response::IntoResponse};
 
 pub type Result<T> = std::result::Result<T, ServerError>;
 
+#[derive(Debug)]
 pub enum ServerError {
     NotFound,
     InternalError(String),

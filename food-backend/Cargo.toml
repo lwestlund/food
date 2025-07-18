@@ -12,6 +12,8 @@ chrono.workspace = true
 serde.workspace = true
 sqlx = { version = "0.8.6", default-features = false, features = ["chrono", "macros", "migrate", "runtime-tokio", "sqlite"] }
 tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [dev-dependencies]
 http-body-util.workspace = true

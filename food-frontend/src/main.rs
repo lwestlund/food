@@ -5,8 +5,10 @@ mod mime;
 use backend::Backend;
 use error::{AppError, ErrorResponse, ErrorWithLayout as _, ResultWithLayout as _};
 use heck::ToKebabCase;
+use tracing::{Level, instrument};
+use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use anyhow::Context;
 use axum::{
@@ -22,6 +24,8 @@ const DEFAULT_BACKEND_PORT: u16 = 3001;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    init_logging()?;
+
     let backend = {
         let backend_addr: IpAddr = std::env::var("BACKEND_HOST").map_or_else(
             |_| Ok(DEFAULT_BACKEND_HOST),
@@ -34,22 +38,24 @@ async fn main() -> anyhow::Result<()> {
         Backend::new(backend_addr, backend_port)
     };
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3002".to_string());
+    let port = std::env::var("PORT").map_or_else(|_| Ok(3002), |port| port.parse())?;
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port);
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+
     let app = Router::new()
         .route("/", get(root))
         .route("/recipes/{recipe}", get(recipe))
         .fallback(handler_404)
         .with_state(backend)
         .layer(LiveReloadLayer::new());
-    let address = format!("0.0.0.0:{port}");
-    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
 
-    println!("Serving at http://{address}");
+    tracing::info!("Serving at http://{addr}");
     axum::serve(listener, app).await?;
 
     Ok(())
 }
 
+#[instrument(skip(backend, layout), err(Debug))]
 async fn root(State(backend): State<Backend>, layout: Layout) -> Result<Markup, ErrorResponse> {
     let recipe_listing = backend
         .get_recipe_listing()
@@ -79,6 +85,7 @@ async fn root(State(backend): State<Backend>, layout: Layout) -> Result<Markup, 
     Ok(layout.render(&body))
 }
 
+#[instrument(skip(backend, layout), err(Debug))]
 async fn recipe(
     State(backend): State<Backend>,
     layout: Layout,
@@ -139,11 +146,12 @@ fn recipe_id_title_to_slug(id: i64, title: &str) -> String {
     format!("{}-{}", id, title.to_kebab_case())
 }
 
+#[instrument(skip(layout), ret(level = Level::ERROR))]
 async fn handler_404(layout: Layout) -> ErrorResponse {
     AppError::NotFound.with_layout(&layout)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Layout {
     title: String,
 }
@@ -189,4 +197,16 @@ where
         let title = "Food".to_owned();
         Ok(Self { title })
     }
+}
+
+fn init_logging() -> anyhow::Result<()> {
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env()
+        .context("Invalid logging directives from environment")?;
+    let registry = tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .compact();
+    registry.init();
+    Ok(())
 }

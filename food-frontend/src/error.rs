@@ -3,6 +3,7 @@ use maud::html;
 
 use crate::backend::BackendError;
 
+#[derive(Debug)]
 pub(crate) enum AppError {
     NotFound,
     Internal {
@@ -33,6 +34,7 @@ impl From<BackendError> for AppError {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ErrorResponse {
     layout: super::Layout,
     error: AppError,
