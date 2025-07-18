@@ -6,7 +6,7 @@ use backend::Backend;
 use error::{AppError, ErrorResponse, ErrorWithLayout as _, ResultWithLayout as _};
 use heck::ToKebabCase;
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use anyhow::Context;
 use axum::{
@@ -34,17 +34,18 @@ async fn main() -> anyhow::Result<()> {
         Backend::new(backend_addr, backend_port)
     };
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "3002".to_string());
+    let port = std::env::var("PORT").map_or_else(|_| Ok(3002), |port| port.parse())?;
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port);
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+
     let app = Router::new()
         .route("/", get(root))
         .route("/recipes/{recipe}", get(recipe))
         .fallback(handler_404)
         .with_state(backend)
         .layer(LiveReloadLayer::new());
-    let address = format!("0.0.0.0:{port}");
-    let listener = tokio::net::TcpListener::bind(address.clone()).await?;
 
-    println!("Serving at http://{address}");
+    println!("Serving at http://{addr}");
     axum::serve(listener, app).await?;
 
     Ok(())
