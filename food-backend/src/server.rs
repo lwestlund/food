@@ -6,11 +6,12 @@ use error::Result;
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{OriginalUri, Path, State},
     http::StatusCode,
     routing::get,
 };
 use sqlx::SqlitePool;
+use tracing::{Level, instrument};
 
 use crate::database;
 
@@ -29,10 +30,12 @@ pub async fn serve(port: u16, pool: SqlitePool) -> anyhow::Result<()> {
     let app = app(pool);
     let app = app.fallback(handler_404);
 
+    tracing::info!("Serving at http://{addr}");
     axum::serve(listener, app).await?;
     Ok(())
 }
 
+#[instrument(skip(pool), ret)]
 async fn get_recipes_list(
     State(pool): State<SqlitePool>,
 ) -> Result<Json<Vec<models::RecipeListing>>> {
@@ -40,6 +43,7 @@ async fn get_recipes_list(
     Ok(Json(recipes))
 }
 
+#[instrument(skip(pool), ret)]
 async fn get_recipe_by_id(
     State(pool): State<SqlitePool>,
     Path(recipe_id): Path<i64>,
@@ -48,6 +52,7 @@ async fn get_recipe_by_id(
     Ok(Json(recipe))
 }
 
-async fn handler_404() -> StatusCode {
+#[instrument(ret(level = Level::ERROR))]
+async fn handler_404(OriginalUri(uri): OriginalUri) -> StatusCode {
     StatusCode::NOT_FOUND
 }
