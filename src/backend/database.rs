@@ -1,44 +1,27 @@
-use std::str::FromStr;
+use sqlx::sqlite::SqliteConnectOptions;
 
-use anyhow::Context;
-use sqlx::{
-    SqlitePool,
-    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-};
+use crate::models;
 
-#[must_use]
-pub fn configure_connect_options(options: SqliteConnectOptions) -> SqliteConnectOptions {
-    options.foreign_keys(true)
+pub fn configure_connect_options(connect_opts: SqliteConnectOptions) -> SqliteConnectOptions {
+    connect_opts.foreign_keys(true)
 }
 
-#[allow(clippy::missing_errors_doc)]
-pub async fn from_env() -> anyhow::Result<SqlitePool> {
-    let database_url = std::env::var("DATABASE_URL")
-        .context("No database provided: please define `DATABASE_URL` and run again")?;
-    let options = SqliteConnectOptions::from_str(&database_url)?;
-    let pool_options = SqlitePoolOptions::new();
-    let pool = pool_options
-        .connect_with(configure_connect_options(options))
-        .await
-        .context("Failed to connect to the database")?;
-    Ok(pool)
-}
-
-#[allow(clippy::missing_errors_doc)]
-pub async fn all_recipe_titles(pool: &SqlitePool) -> sqlx::Result<Vec<models::RecipeListing>> {
+pub async fn recipe_listing(pool: &sqlx::SqlitePool) -> sqlx::Result<Vec<models::RecipeListing>> {
     let r = sqlx::query!("SELECT id, title FROM recipe")
         .fetch_all(pool)
         .await?;
-    Ok(r.into_iter()
+    let recipe_listings = r
+        .into_iter()
         .map(|r| models::RecipeListing {
             id: r.id,
             title: r.title,
         })
-        .collect())
+        .collect();
+
+    Ok(recipe_listings)
 }
 
-#[allow(clippy::missing_errors_doc)]
-pub async fn recipe(pool: &SqlitePool, recipe_id: i64) -> sqlx::Result<models::Recipe> {
+pub async fn recipe(pool: &sqlx::SqlitePool, recipe_id: i64) -> sqlx::Result<models::Recipe> {
     let r = sqlx::query!(
         r#"
 SELECT
@@ -79,7 +62,10 @@ WHERE
     Ok(recipe)
 }
 
-async fn ingredients(pool: &SqlitePool, recipe_id: i64) -> sqlx::Result<Vec<models::Ingredient>> {
+async fn ingredients(
+    database: &sqlx::SqlitePool,
+    recipe_id: i64,
+) -> sqlx::Result<Vec<models::Ingredient>> {
     let ingredients: Vec<_> = sqlx::query!(
         r#"
 SELECT
@@ -99,7 +85,7 @@ ORDER BY
 "#,
         recipe_id
     )
-    .fetch_all(pool)
+    .fetch_all(database)
     .await?
     .into_iter()
     .map(|record| models::Ingredient {
@@ -111,7 +97,7 @@ ORDER BY
     Ok(ingredients)
 }
 
-async fn instructions(pool: &SqlitePool, recipe_id: i64) -> sqlx::Result<Vec<String>> {
+async fn instructions(database: &sqlx::SqlitePool, recipe_id: i64) -> sqlx::Result<Vec<String>> {
     let instructions = sqlx::query!(
         r#"
 SELECT
@@ -125,7 +111,7 @@ ORDER BY
 "#,
         recipe_id
     )
-    .fetch_all(pool)
+    .fetch_all(database)
     .await?
     .into_iter()
     .map(|record| record.description)
