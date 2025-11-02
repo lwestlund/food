@@ -1,4 +1,4 @@
-use food_backend::database;
+use food::backend::database;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 #[sqlx::test(fixtures("glass_of_water"))]
@@ -9,7 +9,7 @@ async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectO
         .await
         .unwrap();
 
-    let all_titles = database::all_recipe_titles(&pool).await.unwrap();
+    let all_titles = database::recipe_listing(&pool).await.unwrap();
     let id = all_titles
         .iter()
         .find_map(|recipe_listing| {

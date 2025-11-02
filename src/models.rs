@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[must_use]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RecipeListing {
     pub id: i64,
     pub title: String,
