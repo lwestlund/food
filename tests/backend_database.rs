@@ -1,15 +1,18 @@
-use food::backend::database;
+use food::backend::{Database, database};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 #[sqlx::test(fixtures("glass_of_water"))]
 #[allow(clippy::float_cmp)]
 async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectOptions) {
-    let pool = pool_options
-        .connect_with(database::configure_connect_options(options))
-        .await
-        .unwrap();
+    let db = {
+        let pool = pool_options
+            .connect_with(database::configure_connect_options(options))
+            .await
+            .unwrap();
+        Database::new(pool)
+    };
 
-    let all_titles = database::recipe_listing(&pool).await.unwrap();
+    let all_titles = db.recipe_listing().await.unwrap();
     let id = all_titles
         .iter()
         .find_map(|recipe_listing| {
@@ -21,7 +24,7 @@ async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectO
         })
         .unwrap();
 
-    let r = database::recipe(&pool, id).await.unwrap();
+    let r = db.recipe(id).await.unwrap();
 
     assert_eq!(r.title, "Glass of water");
     assert_eq!(r.description, "Refreshing, isn't it?");
@@ -42,6 +45,6 @@ async fn glass_of_water(pool_options: SqlitePoolOptions, options: SqliteConnectO
     );
 
     let non_existing_id = 5;
-    let r = database::recipe(&pool, non_existing_id).await;
+    let r = db.recipe(non_existing_id).await;
     assert!(matches!(r, Err(sqlx::Error::RowNotFound)));
 }
