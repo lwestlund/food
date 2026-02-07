@@ -72,3 +72,12 @@ WHERE
         Ok(recipe_listings)
     }
 }
+
+// Needed to be able to extract Database as an axum::extract::State in server functions.
+// If a Database isn't added to the axum router, this will panic at runtime and cause a 500 for the
+// client.
+impl FromRef<FullstackContext> for Database {
+    fn from_ref(state: &FullstackContext) -> Self {
+        state.extension::<Database>().unwrap()
+    }
+}
