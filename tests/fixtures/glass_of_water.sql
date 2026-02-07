@@ -1,3 +1,5 @@
+-- sqlfluff:dialect:sqlite
+
 INSERT INTO source
 (name)
 VALUES
