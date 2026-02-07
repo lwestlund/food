@@ -13,7 +13,7 @@ pub(crate) fn Recipes() -> Element {
 
 #[component]
 pub(crate) fn RecipeList() -> Element {
-    let response = use_server_future(backend::recipe_listing)?;
+    let response = use_server_future(backend::recipe::listing)?;
     let response_read = response.read();
     // SAFETY: If the future was still pending, it would have early returned
     // with 'suspended' on the `?` above.
@@ -50,7 +50,7 @@ pub(crate) fn Recipe(recipe: String) -> Element {
         .parse::<i64>()
         .or_bad_request(format!("bad recipe id `{id}`"))?;
 
-    let response = use_server_future(move || backend::recipe_by_id(id))?;
+    let response = use_server_future(move || backend::recipe::by_id(id))?;
     let response_read = response.read();
     // SAFETY: If the future was still pending, it would have early returned
     // with 'suspended' on the `?` above.
