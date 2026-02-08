@@ -4,7 +4,7 @@ edition = "2024"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.98"
+anyhow = "1.0.101"
 chrono = { version = "0.4.41", default-features = false, features = ["serde"] }
 dioxus = { version = "0.7.3", features = ["fullstack", "router"] }
 dotenvy = { version = "0.15.7", optional = true }
