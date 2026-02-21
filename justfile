@@ -1,26 +1,26 @@
 set dotenv-load
 
 @default:
-    just --list
+  just --list
 
 database-url := `grep DATABASE_URL .env | awk -F':' '{ print $2 }'`
 
 dev-init:
-    cargo binstall sqlx-cli dioxus-cli
+  cargo binstall sqlx-cli dioxus-cli
 
 db-setup:
-    sqlx database setup
+  sqlx database setup
 
 db-reset:
-    sqlx database reset
+  sqlx database reset
 
 db-interactive:
-    sqlite3 {{database-url}}
+  sqlite3 {{database-url}}
 
 test:
-    cargo test --features web
-    cargo test --features server
+  cargo test --features web
+  cargo test --features server
 
 lint:
-    cargo clippy --all-targets --features web
-    cargo clippy --all-targets --features server
+  cargo clippy --all-targets --features web
+  cargo clippy --all-targets --features server
