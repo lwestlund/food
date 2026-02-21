@@ -6,12 +6,8 @@ use crate::router::Route;
 pub(crate) fn NavBar() -> Element {
     rsx! {
         div { id: "navbar",
-              Link { to: Route::Home,
-                     "Home"
-              }
-              Link { to: Route::RecipeList,
-                  "Recipes"
-              }
+            Link { to: Route::Home, "Home" }
+            Link { to: Route::RecipeList, "Recipes" }
         }
         Outlet::<Route> {}
     }

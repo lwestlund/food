@@ -23,17 +23,16 @@ pub(crate) fn RecipeList() -> Element {
 
     rsx! {
         ul { id: "recipe-listings",
-             for listing in &recipe_listings {
-                 li { key: "{listing.id}",
-                      class: "recipe-listing",
-                      Link {
-                          to: Route::Recipe {
-                              recipe: recipe_listing_to_slug(listing),
-                          },
-                          "{listing.title}"
-                      }
-                 }
-             }
+            for listing in &recipe_listings {
+                li { key: "{listing.id}", class: "recipe-listing",
+                    Link {
+                        to: Route::Recipe {
+                            recipe: recipe_listing_to_slug(listing),
+                        },
+                        "{listing.title}"
+                    }
+                }
+            }
         }
     }
 }
