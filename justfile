@@ -17,6 +17,9 @@ db-reset:
 db-interactive:
   sqlite3 {{database-url}}
 
+serve $RUST_LOG="info,axum_session=warn":
+  dx serve
+
 test:
   cargo test --features web
   cargo test --features server
