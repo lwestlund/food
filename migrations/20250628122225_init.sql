@@ -1,5 +1,3 @@
--- sqlfluff:dialect:sqlite
-
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE source (
