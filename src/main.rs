@@ -1,5 +1,6 @@
 mod app;
 mod components;
+mod layouts;
 mod router;
 mod views;
 

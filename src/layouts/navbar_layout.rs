@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::router::Route;
 
 #[component]
-pub(crate) fn NavBar() -> Element {
+pub(crate) fn NavbarLayout() -> Element {
     rsx! {
         div { id: "navbar",
             Link { to: Route::Home, "Home" }
