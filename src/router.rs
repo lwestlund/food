@@ -1,11 +1,12 @@
 use dioxus::prelude::*;
 
-use crate::layouts::{ErrorLayout, NavbarLayout};
+use crate::layouts::{AuthLayout, ErrorLayout, NavbarLayout};
 use crate::views;
 
 #[derive(Routable, Clone)]
 #[rustfmt::skip]
 pub(super) enum Route {
+    #[layout(AuthLayout)]
     #[layout(NavbarLayout)]
     #[layout(ErrorLayout)]
         #[route("/", views::Home)]
@@ -18,6 +19,8 @@ pub(super) enum Route {
                 Recipe { recipe: String },
             #[end_layout]
         #[end_nest]
+        #[route("/user", views::User)]
+        UserPage,
         #[route("/:..route", views::NotFound)]
         NotFound { route: Vec<String> },
 }

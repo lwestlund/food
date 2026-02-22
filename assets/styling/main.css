@@ -1,17 +1,136 @@
-body {
-  background-color: #0f1116;
-  color: #ffffff;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 20px;
+* {
+  color: beige;
 }
 
-#navbar {}
+:root {
+  --highlight-color: #3800ff;
+  --alt-color: dimgray;
+  --background-color: #191d24;
+
+  --border-width: 1px;
+  --navbar-height: 3em;
+}
+
+
+
+body {
+  background-color: var(--background-color);
+  color: #ffffff;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0px;
+  height: 100vh;
+}
+
+#navbar {
+  display: flex;
+  justify-content: center;
+  height: var(--navbar-height);
+}
 
 #navbar a {
   padding: 10px;
 }
 
-/* Recipe */
+.content-wrapper {
+  height: calc(100vh - var(--navbar-height));
+  display: flex;
+  align-items: center;
+}
+
+.content {
+  width: 300px;
+  margin: 0 auto;
+}
+
+input {
+  box-sizing: border-box;
+  outline: none;
+  border: var(--border-width) solid var(--alt-color);
+  height: 2em;
+  width: 100%;
+  padding: 4px;
+  margin: 3px 0px;
+  border-radius: 5px;
+  color: black;
+  background-color: white;
+}
+
+button {
+  margin: 3px 0px;
+  border-radius: 5px;
+  border: none;
+  height: 24px;
+  background-color: var(--highlight-color);
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 3px 0px;
+}
+
+.login-failed {
+  color: #ff3a3a;
+  font-size: 1em;
+  margin: 3px 0px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: sans-serif;
+  user-select: none;
+  gap: 10;
+}
+.checkbox-container input {
+  /* display: none; /* Hide the default checkbox */
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+.checkbox-container:hover input ~ .checkmark {
+  border: var(--border-width) solid var(--highlight-color);
+}
+.checkbox-container input:focus-visible ~.checkmark {
+  outline: 1px solid white;
+  /* border-color: purple; */
+}
+.checkbox-container input:checked ~.checkmark {
+  background-color: var(--highlight-color);
+}
+.checkbox-container input:checked ~.checkmark:after {
+  display: block;
+}
+.checkmark {
+  height: 1.0em;
+  width: 1.0em;
+  background-color: white;
+  border-radius: 0.3em;
+  border: 1px solid var(--alt-color);
+  transition: all 0.3s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.checkmark:after {
+  content: '';
+  display: none;
+  width: 0.25em;
+  height: 0.6em;
+  border: solid white;
+  border-width: 0 0.2em 0.2em 0;
+  transform: rotate(45deg);
+  margin-bottom: 0.20em;
+}
+
+#stay-signed-in-label {
+  font-size: 1em;
+}
+
 #wrapper {
   display: grid;
   justify-content: center;

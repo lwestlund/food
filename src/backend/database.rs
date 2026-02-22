@@ -3,13 +3,14 @@ mod recipe;
 use dioxus::fullstack::{FullstackContext, extract::FromRef};
 use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 
+use super::{User, auth};
 use crate::models;
 
 pub fn configure_connect_options(connect_opts: SqliteConnectOptions) -> SqliteConnectOptions {
     connect_opts.foreign_keys(true)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Database {
     pool: SqlitePool,
 }
@@ -70,6 +71,114 @@ WHERE
             })
             .collect();
         Ok(recipe_listings)
+    }
+
+    pub async fn user_by_id(&self, user_id: auth::Id) -> sqlx::Result<Option<User>> {
+        let user = match sqlx::query!(
+            r#"
+            SELECT * FROM user
+            WHERE id = ?;
+            "#,
+            user_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        {
+            Ok(user) => user,
+            Err(sqlx::Error::RowNotFound) => return Ok(None),
+            Err(err) => return Err(err),
+        };
+
+        Ok(Some(User {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            password_hash: user.password_hash,
+        }))
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    pub async fn user_by_email(&self, email: &str) -> sqlx::Result<Option<User>> {
+        let user = match sqlx::query!(
+            r#"
+            SELECT * FROM user
+            WHERE email = ?;
+            "#,
+            email
+        )
+        .fetch_one(&self.pool)
+        .await
+        {
+            Ok(user) => user,
+            Err(sqlx::Error::RowNotFound) => return Ok(None),
+            Err(err) => return Err(err),
+        };
+
+        Ok(Some(User {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            password_hash: user.password_hash,
+        }))
+    }
+
+    #[tracing::instrument(err)]
+    pub async fn add_user(
+        &self,
+        username: &str,
+        email: &str,
+        password_hash: &str,
+    ) -> sqlx::Result<i64> {
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO user (username, email, password_hash)
+            VALUES (?, ?, ?);
+            "#,
+            username,
+            email,
+            password_hash,
+        )
+        .execute(&self.pool)
+        .await?;
+        let id = result.last_insert_rowid();
+        Ok(id)
+    }
+
+    pub async fn delete_user(&self, email: &str) -> sqlx::Result<()> {
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM user
+            WHERE email = ?;
+            "#,
+            email,
+        )
+        .execute(&self.pool)
+        .await?;
+        if result.rows_affected() != 1 {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(())
+    }
+
+    pub async fn set_user_password_hash(
+        &self,
+        email: &str,
+        password_hash: &str,
+    ) -> sqlx::Result<()> {
+        let result = sqlx::query!(
+            r#"
+            UPDATE user SET password_hash = ?
+            WHERE email = ?;
+            "#,
+            password_hash,
+            email
+        )
+        .execute(&self.pool)
+        .await?;
+        if result.rows_affected() != 1 {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(())
     }
 }
 

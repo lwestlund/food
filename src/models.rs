@@ -1,6 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[must_use]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct User {
+    pub username: String,
+    pub email: String,
+}
+
+#[must_use]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RecipeListing {
     pub id: i64,

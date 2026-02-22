@@ -6,8 +6,10 @@ use dioxus::prelude::*;
 #[component]
 pub(crate) fn Recipes() -> Element {
     rsx! {
-        h1 { "Recipes" }
-        Outlet::<Route> {}
+        div { class: "content",
+            h1 { "Recipes" }
+            Outlet::<Route> {}
+        }
     }
 }
 
@@ -66,7 +68,7 @@ pub(crate) fn Recipe(recipe: String) -> Element {
     }
 
     rsx! {
-        div { id: "wrapper",
+        div { class: "content",
             div { id: "recipe",
                 h2 { "{r.title}" }
                 div { id: "meal-type",
