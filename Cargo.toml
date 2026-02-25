@@ -1,7 +1,30 @@
-[package]
-name = "food"
+[workspace]
+resolver = "3"
+members = ["cli"]
+
+[workspace.package]
 edition = "2024"
 version = "0.1.0"
+
+[workspace.dependencies]
+# local
+food = { path = ".", default-features = false }
+
+# external
+anyhow = "1.0.101"
+clap = { version = "4.5.57", features = ["derive"] }
+dioxus = { version = "0.7.3" }
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.18"
+tokio = { version = "1.49.0", default-features = false, features = [
+  "macros",
+  "rt-multi-thread",
+] }
+
+[package]
+name = "food"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.101"
@@ -13,14 +36,14 @@ axum_session_sqlx = { version = "0.7.0", default-features = false, features = [
   "tls-rustls",
 ], optional = true }
 chrono = { version = "0.4.43", default-features = false, features = ["serde"] }
-dioxus = { version = "0.7.3", features = ["fullstack", "router", "html"] }
+dioxus = { workspace = true, features = ["fullstack", "router", "html"] }
 dioxus-html = { version = "0.7.3", features = ["serialize"] }
 dotenvy = { version = "0.15.7", optional = true }
 heck = "0.5.0"
 password-auth = { version = "1.0.0", optional = true, features = ["argon2"] }
-serde = { version = "1.0.228", features = ["derive"] }
-thiserror = "2.0.18"
-tokio = { version = "1.49.0", default-features = false, features = [
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = [
   "macros",
   "rt-multi-thread",
 ], optional = true }
