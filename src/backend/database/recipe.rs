@@ -6,21 +6,23 @@ pub(super) async fn ingredients(
 ) -> sqlx::Result<Vec<models::Ingredient>> {
     let ingredients: Vec<_> = sqlx::query!(
         r#"
-SELECT
-    ri.quantity,
-    m.unit,
-    i.name
-FROM
-    recipe_ingredient AS ri
-JOIN
-    measurement AS m ON ri.measurement_id = m.id
-JOIN
-    ingredient AS i ON ri.ingredient_id = i.id
-WHERE
-    ri.recipe_id = ?
-ORDER BY
-    ri.id
-"#,
+        SELECT
+            ri.quantity,
+            m.unit,
+            i.name
+        FROM
+            recipe_ingredient AS ri
+        JOIN
+            measurement AS m
+            ON ri.measurement_id = m.id
+        JOIN
+            ingredient AS i
+            ON ri.ingredient_id = i.id
+        WHERE
+            ri.recipe_id = ?
+        ORDER BY
+            ri.id;
+        "#,
         recipe_id
     )
     .fetch_all(database)
@@ -41,15 +43,14 @@ pub(super) async fn instructions(
 ) -> sqlx::Result<Vec<String>> {
     let instructions = sqlx::query!(
         r#"
-SELECT
-    i.description
-FROM
-    instruction AS i
-WHERE
-    i.recipe_id = ?
-ORDER BY
-    i.step_number
-"#,
+        SELECT i.description
+        FROM
+            instruction AS i
+        WHERE
+            i.recipe_id = ?
+        ORDER BY
+            i.step_number;
+        "#,
         recipe_id
     )
     .fetch_all(database)

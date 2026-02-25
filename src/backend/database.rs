@@ -23,22 +23,24 @@ impl Database {
     pub async fn recipe(&self, recipe_id: i64) -> sqlx::Result<models::Recipe> {
         let r = sqlx::query!(
             r#"
-SELECT
-    r.title,
-    r.description,
-    s.name AS source_name,
-    s.url AS source_url,
-    mt.type_name AS meal_type,
-    r.creation_date
-FROM
-    recipe AS r
-JOIN
-    source AS s ON r.source_id = s.id
-JOIN
-    meal_type AS mt ON r.meal_type_id = mt.id
-WHERE
-    r.id = ?
-"#,
+            SELECT
+                r.title,
+                r.description,
+                s.name AS source_name,
+                s.url AS source_url,
+                mt.type_name AS meal_type,
+                r.creation_date
+            FROM
+                recipe AS r
+            JOIN
+                source AS s
+                ON r.source_id = s.id
+            JOIN
+                meal_type AS mt
+                ON r.meal_type_id = mt.id
+            WHERE
+                r.id = ?;
+            "#,
             recipe_id
         )
         .fetch_one(&self.pool)
@@ -60,9 +62,16 @@ WHERE
     }
 
     pub async fn recipe_listing(&self) -> sqlx::Result<Vec<models::RecipeListing>> {
-        let r = sqlx::query!("SELECT id, title FROM recipe")
-            .fetch_all(&self.pool)
-            .await?;
+        let r = sqlx::query!(
+            r#"
+            SELECT
+                id,
+                title
+            FROM recipe;
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
         let recipe_listings = r
             .into_iter()
             .map(|r| models::RecipeListing {
@@ -73,6 +82,7 @@ WHERE
         Ok(recipe_listings)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn user_by_id(&self, user_id: auth::Id) -> sqlx::Result<Option<User>> {
         let user = match sqlx::query!(
             r#"
