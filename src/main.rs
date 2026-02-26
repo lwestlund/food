@@ -1,5 +1,6 @@
 mod app;
 mod components;
+mod layouts;
 mod router;
 mod views;
 
@@ -12,7 +13,11 @@ fn main() {
     #[cfg(feature = "server")]
     dioxus::serve(|| async {
         use anyhow::Context as _;
+        use axum_session::{SessionConfig, SessionLayer, SessionStore};
+        use axum_session_auth::AuthConfig;
+        use axum_session_sqlx::SessionSqlitePool;
         use dioxus::server::axum::Extension;
+        use food::backend::{Database, auth::AuthLayer};
         use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
         use std::str::FromStr as _;
 
@@ -23,9 +28,39 @@ fn main() {
             let connect_opts = SqliteConnectOptions::from_str(&database_url)?;
             let connect_opts = food::backend::database::configure_connect_options(connect_opts);
             let pool_options = SqlitePoolOptions::new();
-            pool_options.connect_with(connect_opts).await?
+            pool_options
+                .connect_with(connect_opts)
+                .await
+                .context("failed to connect to database")?
+        };
+        sqlx::migrate!()
+            .run(&pool)
+            .await
+            .context("failed to run database migrations")?;
+        let database = Database::new(pool.clone());
+
+        let auth_layer = {
+            let database = database.clone();
+            let auth_config = AuthConfig::default();
+            AuthLayer::new(Some(database)).with_config(auth_config)
         };
 
-        Ok(dioxus::server::router(App).layer(Extension(pool)))
+        let session_layer = {
+            let session_store = SessionStore::<SessionSqlitePool>::new(
+                Some(pool.clone().into()),
+                SessionConfig::default().with_table_name("sessions"),
+            )
+            .await?;
+            SessionLayer::new(session_store)
+        };
+
+        let router = dioxus::server::router(App)
+            // Important that the auth layer gets added before the session layer for
+            // the middleware to apply in the right order.
+            .layer(auth_layer)
+            .layer(session_layer)
+            .layer(Extension(database));
+
+        Ok(router)
     })
 }

@@ -1,0 +1,15 @@
+[package]
+name = "food-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+food = { workspace = true, features = ["web"] }
+dioxus = { workspace = true, features = ["fullstack"] }
+serde.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[lints]
+workspace = true

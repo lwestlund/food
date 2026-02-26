@@ -1,19 +1,21 @@
 use crate::router::Route;
-use food::{backend, models};
+use food::{api, models};
 
 use dioxus::prelude::*;
 
 #[component]
 pub(crate) fn Recipes() -> Element {
     rsx! {
-        h1 { "Recipes" }
-        Outlet::<Route> {}
+        div { class: "content",
+            h1 { "Recipes" }
+            Outlet::<Route> {}
+        }
     }
 }
 
 #[component]
 pub(crate) fn RecipeList() -> Element {
-    let response = use_server_future(backend::recipe_listing)?;
+    let response = use_server_future(api::recipe::listing)?;
     let response_read = response.read();
     // SAFETY: If the future was still pending, it would have early returned
     // with 'suspended' on the `?` above.
@@ -23,17 +25,16 @@ pub(crate) fn RecipeList() -> Element {
 
     rsx! {
         ul { id: "recipe-listings",
-             for listing in &recipe_listings {
-                 li { key: "{listing.id}",
-                      class: "recipe-listing",
-                      Link {
-                          to: Route::Recipe {
-                              recipe: recipe_listing_to_slug(listing),
-                          },
-                          "{listing.title}"
-                      }
-                 }
-             }
+            for listing in &recipe_listings {
+                li { key: "{listing.id}", class: "recipe-listing",
+                    Link {
+                        to: Route::Recipe {
+                            recipe: recipe_listing_to_slug(listing),
+                        },
+                        "{listing.title}"
+                    }
+                }
+            }
         }
     }
 }
@@ -50,7 +51,7 @@ pub(crate) fn Recipe(recipe: String) -> Element {
         .parse::<i64>()
         .or_bad_request(format!("bad recipe id `{id}`"))?;
 
-    let response = use_server_future(move || backend::recipe_by_id(id))?;
+    let response = use_server_future(move || api::recipe::by_id(id))?;
     let response_read = response.read();
     // SAFETY: If the future was still pending, it would have early returned
     // with 'suspended' on the `?` above.
@@ -67,7 +68,7 @@ pub(crate) fn Recipe(recipe: String) -> Element {
     }
 
     rsx! {
-        div { id: "wrapper",
+        div { class: "content",
             div { id: "recipe",
                 h2 { "{r.title}" }
                 div { id: "meal-type",

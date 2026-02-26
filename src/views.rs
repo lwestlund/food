@@ -1,8 +1,8 @@
 mod home;
 pub(crate) use home::Home;
 
-mod navbar;
-pub(crate) use navbar::NavBar;
+mod user;
+pub(crate) use user::User;
 
 mod not_found;
 pub(crate) use not_found::NotFound;
