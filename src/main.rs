@@ -28,8 +28,15 @@ fn main() {
             let connect_opts = SqliteConnectOptions::from_str(&database_url)?;
             let connect_opts = food::backend::database::configure_connect_options(connect_opts);
             let pool_options = SqlitePoolOptions::new();
-            pool_options.connect_with(connect_opts).await?
+            pool_options
+                .connect_with(connect_opts)
+                .await
+                .context("failed to connect to database")?
         };
+        sqlx::migrate!()
+            .run(&pool)
+            .await
+            .context("failed to run database migrations")?;
         let database = Database::new(pool.clone());
 
         let auth_layer = {

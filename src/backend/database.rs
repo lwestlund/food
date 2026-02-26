@@ -7,7 +7,7 @@ use super::{User, auth};
 use crate::models;
 
 pub fn configure_connect_options(connect_opts: SqliteConnectOptions) -> SqliteConnectOptions {
-    connect_opts.foreign_keys(true)
+    connect_opts.foreign_keys(true).create_if_missing(true)
 }
 
 #[derive(Clone, Debug)]
