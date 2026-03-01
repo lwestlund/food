@@ -1,0 +1,16 @@
+[package]
+name = "user-service"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+password-auth.workspace = true
+serde.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true
+
+[lints]
+workspace = true

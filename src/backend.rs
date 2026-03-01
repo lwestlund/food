@@ -1,6 +1,10 @@
 pub mod auth;
-pub mod database;
-mod user;
+mod server_state;
 
-pub use database::Database;
-pub use user::User;
+pub use server_state::ServerState;
+
+use sqlx::sqlite::SqliteConnectOptions;
+
+pub fn configure_connect_options(connect_opts: SqliteConnectOptions) -> SqliteConnectOptions {
+    connect_opts.foreign_keys(true).create_if_missing(true)
+}

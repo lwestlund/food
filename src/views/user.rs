@@ -45,23 +45,20 @@ fn Login() -> Element {
                     evt.prevent_default();
                     let login_form: api::user::LoginForm = evt.parsed_values().unwrap();
                     match api::user::login(Form(login_form)).await {
-                        Ok(Ok(user)) => {
+                        Ok(user) => {
                             consume_context::<UserContext>().user.set(Some(user));
                         }
-                        Ok(Err(login_error)) => {
+                        Err(login_error) => {
                             use api::user::LoginError;
                             fail_state.set(rsx! {
                                 a { class: "login-failed",
                                     match login_error {
                                         LoginError::InvalidCredentials => "Login failed",
-                                        LoginError::InternalError => "Unexpected error",
+                                        LoginError::Internal | LoginError::ServerFnError(_) => "Unexpected error",
                                     }
                                 }
                             });
                         }
-                        Err(_err) => fail_state.set(rsx! {
-                            a { class: "login-failed", "Unexpected error" }
-                        }),
                     }
                 },
                 h1 { "Log in" }

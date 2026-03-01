@@ -2,61 +2,34 @@ mod login_form;
 
 pub use login_form::LoginForm;
 
-use dioxus::fullstack::Form;
 #[cfg(feature = "server")]
 use dioxus::fullstack::axum::extract::State;
+use dioxus::fullstack::{AsStatusCode, Form};
 use dioxus::prelude::*;
 
 #[cfg(feature = "server")]
-use crate::backend::{Database, auth};
+use crate::backend::{ServerState, auth};
 use crate::models;
 
-#[get("/api/user", auth: auth::Session, db: State<Database>)]
+#[get("/api/user", auth: auth::Session, server_state: State<ServerState>)]
 pub async fn current_user() -> Result<Option<models::User>> {
     let Some(current_user) = auth.current_user.as_ref() else {
         return Ok(None);
     };
-    match db.user_by_id(current_user.id).await {
-        Ok(Some(user)) => Ok(Some(user.into())),
-        Ok(None) => Ok(None),
+    match server_state.user.user_by_id(current_user.id).await {
+        Ok(user) => Ok(Some(user.into())),
         Err(_err) => Ok(None),
     }
 }
 
-#[post("/api/user/login", auth: auth::Session, db: State<Database>)]
-#[tracing::instrument(err, skip_all, fields(email = form.email))]
-pub async fn login(form: Form<LoginForm>) -> Result<Result<models::User, LoginError>> {
-    if let Some(user) = auth.current_user {
-        println!("has a current user: {user:?}");
-        let Some(user) = db.user_by_id(user.id).await.unwrap() else {
-            tracing::error!("failed to find current user in database");
-            return HttpError::internal_server_error("internal error")?;
-        };
-        return Ok(Ok(user.into()));
-    } else {
-        println!("has no current user");
-    }
-    let user = match db.user_by_email(&form.email).await {
-        Ok(Some(user)) => user,
-        Ok(None) => return Ok(Err(LoginError::InvalidCredentials)),
-        Err(err) => {
-            tracing::error!("error getting user by email: {err}");
-            return Ok(Err(LoginError::InternalError));
-        }
-    };
-
-    match password_auth::verify_password(&form.password, &user.password_hash) {
-        Ok(()) => Ok(()),
-        Err(password_auth::VerifyError::PasswordInvalid) => HttpError::unauthorized("bad login"),
-        Err(password_auth::VerifyError::Parse(parse_error)) => {
-            tracing::error!("error when verifying user password: {parse_error}");
-            HttpError::internal_server_error("internal error")
-        }
-    }?;
+#[post("/api/user/login", auth: auth::Session, server_state: State<ServerState>)]
+#[tracing::instrument(skip_all, fields(email = form.email), err)]
+pub async fn login(form: Form<LoginForm>) -> Result<models::User, LoginError> {
+    let user = server_state.auth.login(&form.email, &form.password).await?;
     auth.login_user(user.id);
     auth.remember_user(form.stay_signed_in);
     tracing::info!("logged in user {}", user.id);
-    Ok(Ok(user.into()))
+    Ok(user.into())
 }
 
 #[post("/api/user/logout", auth: auth::Session)]
@@ -65,180 +38,188 @@ pub async fn logout() -> Result<()> {
     Ok(())
 }
 
-#[post("/api/user/add", State(db): State<Database>)]
-#[tracing::instrument(err, skip(db))]
+#[post("/api/user/add", server_state: State<ServerState>)]
+#[tracing::instrument(skip_all, fields(email = email), err)]
 pub async fn add_user(
     username: String,
     email: String,
     password: String,
-) -> Result<Result<(), AddUserError>> {
-    tracing::info!("got request to add user \"{username}\"");
-
-    if let Err(err) = server::validate_password(&password) {
-        return Ok(Err(err.into()));
-    }
-
-    let password_hash = password_auth::generate_hash(password);
-    let id = match db.add_user(&username, &email, &password_hash).await {
-        Ok(id) => id,
-        Err(err) => return Ok(Err(err.into())),
-    };
-    tracing::info!("user added with id {id}");
-    Ok(Ok(()))
+) -> Result<(), AddUserError> {
+    server_state
+        .user
+        .add_user(&username, &email, &password)
+        .await?;
+    Ok(())
 }
 
-#[post("/api/user/delete", db: State<Database>)]
-pub async fn delete_user(email: String) -> Result<()> {
-    match db.delete_user(&email).await {
-        Ok(()) => Ok(()),
-        Err(err) => {
-            tracing::error!("{err}");
-            HttpError::internal_server_error(err.to_string())?
-        }
-    }
+#[post("/api/user/delete", server_state: State<ServerState>)]
+#[tracing::instrument(skip(server_state), err)]
+pub async fn delete_user(email: String) -> ServerFnResult<()> {
+    server_state
+        .user
+        .delete_user(&email)
+        .await
+        .or_internal_server_error("internal error")?;
+    Ok(())
 }
 
-#[patch("/api/user/change-password", db: State<Database>)]
+#[patch("/api/user/change-password", server_state: State<ServerState>)]
+#[tracing::instrument(skip_all, fields(email = email), err)]
 pub async fn change_password(
     email: String,
     current_password: String,
     new_password: String,
-) -> Result<Result<(), ChangePasswordError>> {
-    let user = match db.user_by_email(&email).await {
-        Ok(Some(user)) => user,
-        Ok(None) => return HttpError::unauthorized("no such user")?,
-        Err(err) => {
-            tracing::error!("error getting user by email: {err}");
-            return HttpError::internal_server_error("internal error")?;
-        }
-    };
+) -> Result<(), ChangePasswordError> {
+    server_state
+        .user
+        .change_password(&email, &current_password, &new_password)
+        .await?;
+    Ok(())
+}
 
-    match password_auth::verify_password(current_password, &user.password_hash) {
-        Ok(()) => Ok(()),
-        Err(password_auth::VerifyError::PasswordInvalid) => {
-            HttpError::forbidden("invalid password")
-        }
-        Err(password_auth::VerifyError::Parse(parse_error)) => {
-            tracing::error!("error when verifying user password: {parse_error}");
-            HttpError::internal_server_error("error verifying password")
-        }
-    }?;
+pub use error::*;
+mod error {
+    use super::*;
 
-    if let Err(err) = server::validate_password(&new_password) {
-        return Ok(Err(err.into()));
+    #[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
+    pub enum LoginError {
+        #[error("invalid credentials")]
+        InvalidCredentials,
+        #[error("internal error")]
+        Internal,
+        #[error("internal server error")]
+        ServerFnError(#[from] ServerFnError),
     }
 
-    let password_hash = password_auth::generate_hash(new_password);
-    match db.set_user_password_hash(&user.email, &password_hash).await {
-        Ok(()) => (),
-        Err(sqlx::Error::RowNotFound) => {
-            tracing::error!("user not found when setting password hash");
-            HttpError::internal_server_error("user not found when setting new password")?;
+    impl AsStatusCode for LoginError {
+        fn as_status_code(&self) -> StatusCode {
+            match self {
+                Self::InvalidCredentials => StatusCode::UNAUTHORIZED,
+                Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+                Self::ServerFnError(err) => err.as_status_code(),
+            }
         }
-        Err(err) => {
-            tracing::error!("error setting user password hash: {err}");
-            HttpError::internal_server_error("error saving new password")?;
-        }
-    };
-
-    Ok(Ok(()))
-}
-
-#[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
-pub enum LoginError {
-    #[error("invalid credentials")]
-    InvalidCredentials,
-    #[error("internal error")]
-    InternalError,
-}
-
-#[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
-pub enum AddUserError {
-    #[error("password requirements failed: {0:?}")]
-    PasswordRequirement(Vec<PasswordRequirement>),
-    #[error("internal error")]
-    Internal,
-}
-
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct ChangePasswordError(Vec<PasswordRequirement>);
-
-impl std::fmt::Display for ChangePasswordError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "password requirements failed: {failed_reqs:?}",
-            failed_reqs = self.0
-        )
     }
-}
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum PasswordRequirement {
-    PasswordTooShort { min_length: usize },
-    PasswordTooLong { max_length: usize },
-    NoLowerCase,
-    NoUppercase,
-    NoDigit,
-    NoSpecial,
+    #[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
+    pub enum AddUserError {
+        #[error("password requirements failed: {0:?}")]
+        PasswordRequirement(Vec<PasswordRequirement>),
+        #[error("internal error")]
+        Internal,
+        #[error("internal server error")]
+        ServerFnError(#[from] ServerFnError),
+    }
+
+    impl AsStatusCode for AddUserError {
+        fn as_status_code(&self) -> StatusCode {
+            match self {
+                Self::PasswordRequirement(_) => StatusCode::BAD_REQUEST,
+                Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+                Self::ServerFnError(err) => err.as_status_code(),
+            }
+        }
+    }
+
+    #[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
+    pub enum ChangePasswordError {
+        #[error("password requirements failed: {0:?}")]
+        PasswordRequirements(Vec<PasswordRequirement>),
+        #[error("wrong current password")]
+        WrongCurrentPassword,
+        #[error("internal error")]
+        Internal,
+        #[error("internal server error")]
+        ServerFnError(#[from] ServerFnError),
+    }
+
+    impl AsStatusCode for ChangePasswordError {
+        fn as_status_code(&self) -> StatusCode {
+            match self {
+                Self::PasswordRequirements(_) => StatusCode::BAD_REQUEST,
+                Self::WrongCurrentPassword => StatusCode::UNAUTHORIZED,
+                Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+                Self::ServerFnError(err) => err.as_status_code(),
+            }
+        }
+    }
+
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
+    pub enum PasswordRequirement {
+        PasswordTooShort { min_length: usize },
+        PasswordTooLong { max_length: usize },
+        NoLowerCase,
+        NoUppercase,
+        NoDigit,
+        NoSpecial,
+    }
 }
 
 #[cfg(feature = "server")]
 mod server {
     use super::*;
 
-    impl From<Vec<PasswordRequirement>> for AddUserError {
-        fn from(requirements: Vec<PasswordRequirement>) -> Self {
-            Self::PasswordRequirement(requirements)
+    // Allowed to contstruct models::User on the server, not elsewhere.
+    impl From<user_service::User> for models::User {
+        fn from(user: user_service::User) -> Self {
+            Self {
+                username: user.username,
+                email: user.email,
+            }
         }
     }
 
-    impl From<sqlx::Error> for AddUserError {
-        fn from(_value: sqlx::Error) -> Self {
-            Self::Internal
+    impl From<auth_service::LoginError> for LoginError {
+        fn from(err: auth_service::LoginError) -> Self {
+            match err {
+                auth_service::LoginError::InvalidCredentials => Self::InvalidCredentials,
+                auth_service::LoginError::Internal => Self::Internal,
+            }
         }
     }
 
-    impl From<Vec<PasswordRequirement>> for ChangePasswordError {
-        fn from(requirements: Vec<PasswordRequirement>) -> Self {
-            Self(requirements)
+    impl From<user_service::PasswordRequirement> for PasswordRequirement {
+        fn from(requirement: user_service::PasswordRequirement) -> Self {
+            use user_service::PasswordRequirement as ServiceRequirement;
+            match requirement {
+                ServiceRequirement::PasswordTooShort { min_length } => {
+                    Self::PasswordTooShort { min_length }
+                }
+                ServiceRequirement::PasswordTooLong { max_length } => {
+                    Self::PasswordTooLong { max_length }
+                }
+                ServiceRequirement::NoLowerCase => Self::NoLowerCase,
+                ServiceRequirement::NoUppercase => Self::NoUppercase,
+                ServiceRequirement::NoDigit => Self::NoDigit,
+                ServiceRequirement::NoSpecial => Self::NoSpecial,
+            }
         }
     }
 
-    pub fn validate_password(password: &str) -> Result<(), Vec<PasswordRequirement>> {
-        const MINIMUM_PASSWORD_LENGTH: usize = 14;
-        const MAXIMUM_PASSWORD_LENGTH: usize = 128;
+    impl From<user_service::AddUserError> for AddUserError {
+        fn from(err: user_service::AddUserError) -> Self {
+            use user_service::AddUserError as ServiceError;
+            match err {
+                ServiceError::AlreadyExists => Self::Internal,
+                ServiceError::Internal => Self::Internal,
+                ServiceError::PasswordRequirement(reqs) => {
+                    Self::PasswordRequirement(reqs.into_iter().map(Into::into).collect())
+                }
+            }
+        }
+    }
 
-        let mut failed_requirements = Vec::new();
-
-        let length = password.len();
-        if length < MINIMUM_PASSWORD_LENGTH {
-            failed_requirements.push(PasswordRequirement::PasswordTooShort {
-                min_length: MINIMUM_PASSWORD_LENGTH,
-            });
+    impl From<user_service::ChangePasswordError> for ChangePasswordError {
+        fn from(err: user_service::ChangePasswordError) -> Self {
+            use user_service::ChangePasswordError as ServiceError;
+            match err {
+                ServiceError::PasswordRequirements(requirements) => {
+                    Self::PasswordRequirements(requirements.into_iter().map(Into::into).collect())
+                }
+                ServiceError::WrongCurrentPassword => Self::WrongCurrentPassword,
+                ServiceError::UserNotFound => Self::Internal,
+                ServiceError::Internal => Self::Internal,
+            }
         }
-        if length > MAXIMUM_PASSWORD_LENGTH {
-            failed_requirements.push(PasswordRequirement::PasswordTooLong {
-                max_length: MAXIMUM_PASSWORD_LENGTH,
-            });
-        }
-        if !password.chars().any(|c| c.is_ascii_lowercase()) {
-            failed_requirements.push(PasswordRequirement::NoLowerCase);
-        }
-        if !password.chars().any(|c| c.is_ascii_uppercase()) {
-            failed_requirements.push(PasswordRequirement::NoUppercase);
-        }
-        if !password.chars().any(|c| c.is_ascii_digit()) {
-            failed_requirements.push(PasswordRequirement::NoDigit);
-        }
-        if !password.chars().any(|c| c.is_ascii_punctuation()) {
-            failed_requirements.push(PasswordRequirement::NoSpecial);
-        }
-
-        if !failed_requirements.is_empty() {
-            return Err(failed_requirements);
-        }
-
-        Ok(())
     }
 }
