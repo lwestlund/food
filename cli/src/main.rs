@@ -13,10 +13,7 @@ async fn main() -> anyhow::Result<()> {
         dioxus::fullstack::set_server_url(url);
     }
 
-    if let Err(e) = args.command.run().await {
-        eprintln!("{e}");
-        std::process::exit(1);
-    }
+    args.command.run().await?;
 
     Ok(())
 }
@@ -41,32 +38,21 @@ impl Command {
     async fn run(self) -> anyhow::Result<()> {
         match self {
             Self::AddUser(add_user) => {
-                match api::user::add_user(add_user.username, add_user.email, add_user.password)
-                    .await
-                {
-                    Ok(Ok(())) => println!("User added successfully"),
-                    Ok(Err(err)) => anyhow::bail!("Error adding user: {err}"),
-                    Err(err) => anyhow::bail!("{err}"),
-                }
+                api::user::add_user(add_user.username, add_user.email, add_user.password).await?;
+                println!("User added successfully");
             }
             Self::DeleteUser(delete_user) => {
-                if let Err(err) = api::user::delete_user(delete_user.email).await {
-                    anyhow::bail!("Server error: {err}");
-                }
+                api::user::delete_user(delete_user.email).await?;
                 println!("User deleted successfully");
             }
             Self::ChangePassword(change_password) => {
-                match api::user::change_password(
+                api::user::change_password(
                     change_password.email,
                     change_password.current_password,
                     change_password.new_password,
                 )
-                .await
-                {
-                    Ok(Ok(())) => println!("Password changed successfully"),
-                    Ok(Err(err)) => anyhow::bail!("Error changing password: {err}"),
-                    Err(err) => anyhow::bail!("Server error: {err}"),
-                }
+                .await?;
+                println!("Password changed successfully");
             }
         }
         Ok(())

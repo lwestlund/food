@@ -1,0 +1,12 @@
+[package]
+name = "recipe-service"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
